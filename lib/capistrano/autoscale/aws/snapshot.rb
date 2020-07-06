@@ -14,8 +14,6 @@ module Capistrano
         end
 
         def delete
-          return unless id
-
           ec2_client.delete_snapshot snapshot_id: id
         end
       end

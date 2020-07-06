@@ -11,12 +11,12 @@ module Capistrano
 
         attr_reader :aws_counterpart, :id, :snapshots
 
-        def initialize(id, snapshots = [])
+        def initialize(id, block_device_mappings = [])
           @id = id
           @aws_counterpart = ::Aws::EC2::Image.new id, client: ec2_client
 
-          @snapshots = snapshots.map do |snapshot|
-            Capistrano::Autoscale::AWS::Snapshot.new snapshot&.ebs&.snapshot_id
+          @snapshots = block_device_mappings.map do |mapping|
+            Capistrano::Autoscale::AWS::Snapshot.new mapping&.ebs&.snapshot_id
           end
         end
 
@@ -58,10 +58,11 @@ module Capistrano
           image = image.wait_until_exists
 
           block_device_mappings = nil
-          # Wait until block_device_mappings are available.
+          # Wait until block_device_mappings/snapshots are available.
           loop do
             block_device_mappings = image.block_device_mappings
-            break unless block_device_mappings.empty?
+            snapshot_ids = block_device_mappings.map { |mapping| mapping.ebs&.snapshot_id }.compact
+            break unless snapshot_ids.empty?
 
             sleep 1
             image.load
