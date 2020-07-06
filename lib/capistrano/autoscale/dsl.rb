@@ -24,7 +24,7 @@ module Capistrano
         if instances.any?
           after 'deploy', 'autoscale:deploy'
 
-          if fetch(:aws_autoscale_suspend_processes, true)
+          if fetch(:aws_autoscale_suspend_processes)
             before 'deploy', 'autoscale:suspend'
 
             after 'deploy', 'autoscale:resume'
