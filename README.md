@@ -1,5 +1,7 @@
 # Capistrano Autoscale
 
+[![Build Status](https://travis-ci.org/KentaaNL/capistrano-autoscale.svg?branch=master)](https://travis-ci.org/KentaaNL/capistrano-autoscale)
+
 This is a fork of [lserman/capistrano-elbas](https://github.com/lserman/capistrano-elbas), with several improvements.
 
 Capistrano-autoscale was written to ease the deployment of Rails applications to AWS Auto Scaling
