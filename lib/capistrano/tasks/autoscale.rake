@@ -31,7 +31,7 @@ namespace :autoscale do
     info "Created AMI: #{ami.id}"
 
     info 'Updating Launch Template with the new AMI...'
-    launch_template = asg.launch_template.update(ami)
+    launch_template = asg.launch_template.update(ami, description: revision_log_message)
     info "Updated Launch Template, latest version = #{launch_template.version}"
 
     info 'Cleaning up old AMIs...'

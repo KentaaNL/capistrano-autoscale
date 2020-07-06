@@ -12,11 +12,12 @@ module Capistrano
           @version = version
         end
 
-        def update(ami)
+        def update(ami, description: nil)
           latest = ec2_client.create_launch_template_version(
             launch_template_data: { image_id: ami.id },
             launch_template_id: @id,
-            source_version: @version
+            source_version: @version,
+            version_description: description
           ).launch_template_version
 
           self.class.new(
