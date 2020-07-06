@@ -1,7 +1,6 @@
 bin/
 *.gem
 *.rbc
-/Gemfile.lock
 .bundle
 .config
 .yardoc
@@ -12,6 +11,8 @@ doc/
 lib/bundler/man
 pkg
 rdoc
+.ruby-version
+.ruby-gemset
 test/tmp
 test/version_tmp
 tmp
@@ -20,6 +21,3 @@ tmp
 *.o
 *.a
 mkmf.log
-
-.ruby-version
-.ruby-gemset
