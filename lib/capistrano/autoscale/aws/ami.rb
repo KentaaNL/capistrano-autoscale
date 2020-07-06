@@ -9,7 +9,7 @@ module Capistrano
         DEPLOY_ID_TAG = 'Autoscale-Deploy-id'
         DEPLOY_GROUP_TAG = 'Autoscale-Deploy-group'
 
-        attr_reader :id, :snapshots
+        attr_reader :aws_counterpart, :id, :snapshots
 
         def initialize(id, snapshots = [])
           @id = id

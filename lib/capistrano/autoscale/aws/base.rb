@@ -6,8 +6,6 @@ module Capistrano
       class Base
         include Capistrano::DSL
 
-        attr_reader :aws_counterpart
-
         def ec2_client
           @ec2_client ||= ::Aws::EC2::Client.new(aws_options)
         end

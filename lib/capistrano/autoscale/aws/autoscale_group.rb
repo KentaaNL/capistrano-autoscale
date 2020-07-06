@@ -6,7 +6,7 @@ module Capistrano
       class AutoscaleGroup < Base
         SUSPEND_PROCESSES = %w[Launch Terminate].freeze
 
-        attr_reader :name
+        attr_reader :name, :aws_counterpart
 
         def initialize(name)
           @name = name

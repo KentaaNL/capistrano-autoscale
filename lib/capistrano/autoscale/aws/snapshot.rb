@@ -6,7 +6,7 @@ module Capistrano
       class Snapshot < Base
         include Taggable
 
-        attr_reader :id
+        attr_reader :id, :aws_counterpart
 
         def initialize(id)
           @id = id
