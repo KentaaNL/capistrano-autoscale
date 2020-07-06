@@ -5,12 +5,12 @@
          <resourceId>ami-1a2b3c4d</resourceId>
          <resourceType>image</resourceType>
          <key>Deployed-with</key>
-         <value>ELBAS</value>
+         <value>Capistrano-autoscale</value>
       </item>
       <item>
          <resourceId>ami-1a2b3c4d</resourceId>
          <resourceType>image</resourceType>
-         <key>ELBAS-Deploy-group</key>
+         <key>Autoscale-Deploy-group</key>
          <value>production</value>
       </item>
     </tagSet>

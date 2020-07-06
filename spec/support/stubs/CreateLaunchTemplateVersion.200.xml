@@ -9,7 +9,7 @@
             <instanceType>t2.micro</instanceType>
         </launchTemplateData>
         <launchTemplateId>lt-1234567890</launchTemplateId>
-        <launchTemplateName>elbas-test</launchTemplateName>
+        <launchTemplateName>autoscale-test</launchTemplateName>
         <versionDescription>VersionWithNewAMI</versionDescription>
         <versionNumber>123</versionNumber>
     </launchTemplateVersion>

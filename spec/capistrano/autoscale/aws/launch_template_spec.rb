@@ -1,5 +1,7 @@
-describe Elbas::AWS::LaunchTemplate do
-  subject { Elbas::AWS::LaunchTemplate.new 'test-lt', 'test', '1' }
+# frozen_string_literal: true
+
+describe Capistrano::Autoscale::AWS::LaunchTemplate do
+  subject { Capistrano::Autoscale::AWS::LaunchTemplate.new 'test-lt', 'test', '1' }
 
   before do
     webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'CreateLaunchTemplateVersion.200.xml',
@@ -25,27 +27,27 @@ describe Elbas::AWS::LaunchTemplate do
       subject.update double(:ami, id: 'ami-123')
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with(body: %r{Action=CreateLaunchTemplateVersion})
+        .with(body: /Action=CreateLaunchTemplateVersion/)
     end
 
     it 'creates a new launch template from the given AMI' do
       subject.update double(:ami, id: 'ami-123')
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with(body: %r{LaunchTemplateData.ImageId=ami-123})
+        .with(body: /LaunchTemplateData.ImageId=ami-123/)
     end
 
     it 'uses itself as the source' do
       subject.update double(:ami, id: 'ami-123')
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with(body: %r{LaunchTemplateId=test-lt&SourceVersion=1})
+        .with(body: /LaunchTemplateId=test-lt&SourceVersion=1/)
     end
 
     it 'returns a new launch template' do
       launch_template = subject.update double(:ami, id: 'ami-123')
       expect(launch_template.id).to eq 'lt-1234567890'
-      expect(launch_template.name).to eq 'elbas-test'
+      expect(launch_template.name).to eq 'autoscale-test'
       expect(launch_template.version).to eq 123
     end
   end

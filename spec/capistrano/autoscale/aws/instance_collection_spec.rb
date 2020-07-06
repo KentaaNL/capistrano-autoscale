@@ -1,5 +1,7 @@
-describe Elbas::AWS::InstanceCollection do
-  subject { Elbas::AWS::InstanceCollection.new ['i-1234567890', 'i-500'] }
+# frozen_string_literal: true
+
+describe Capistrano::Autoscale::AWS::InstanceCollection do
+  subject { Capistrano::Autoscale::AWS::InstanceCollection.new %w[i-1234567890 i-500] }
 
   scenarios = [
     { context: 'Single AWS reservation', mock_response_file: 'DescribeInstances.200.xml' },
@@ -16,11 +18,11 @@ describe Elbas::AWS::InstanceCollection do
       describe '#instances' do
         it 'returns Instance objects with name/hostname/state' do
           expect(subject.instances[0].id).to eq 'i-1234567890'
-          expect(subject.instances[0].hostname).to eq 'ec2-1234567890.amazonaws.com'
+          expect(subject.instances[0].private_ip).to eq '10.0.0.12'
           expect(subject.instances[0].state).to eq 16
 
           expect(subject.instances[1].id).to eq 'i-500'
-          expect(subject.instances[1].hostname).to eq 'ec2-500.amazonaws.com'
+          expect(subject.instances[1].private_ip).to eq '10.0.0.12'
           expect(subject.instances[1].state).to eq 32
         end
       end
@@ -34,5 +36,4 @@ describe Elbas::AWS::InstanceCollection do
       end
     end
   end
-
 end

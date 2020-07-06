@@ -1,24 +1,25 @@
-require 'elbas/capistrano'
+# frozen_string_literal: true
 
 describe '#autoscale' do
   before do
     Capistrano::Configuration.reset!
     Rake::Task.define_task('deploy') {}
+    Rake::Task.define_task('deploy:failed') {}
 
     webmock :post, %r{autoscaling.(.*).amazonaws.com\/\z} => 'DescribeAutoScalingGroups.200.xml',
       with: Hash[body: /Action=DescribeAutoScalingGroups/]
   end
 
-  context 'one server'  do
+  context 'one server' do
     before do
       webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'DescribeInstances.200.xml',
-      with: Hash[body: /Action=DescribeInstances/]
+        with: Hash[body: /Action=DescribeInstances/]
     end
 
     it 'adds the server hostname' do
       autoscale 'test-asg'
       expect(env.servers.count).to eq 1
-      expect(env.servers.first.hostname).to eq 'ec2-1234567890.amazonaws.com'
+      expect(env.servers.first.hostname).to eq '10.0.0.12'
     end
 
     it 'passes along the properties' do
@@ -37,14 +38,14 @@ describe '#autoscale' do
     it 'adds multiple server hostnames' do
       autoscale 'test-asg'
       expect(env.servers.count).to eq 2
-      expect(env.servers.map(&:hostname)).to match_array ['ec2-1234567890.amazonaws.com', 'ec2-1122334455.amazonaws.com']
+      expect(env.servers.map(&:hostname)).to match_array ['10.0.0.12', '10.0.0.13']
     end
 
     it 'passes along the properties' do
       autoscale 'test-asg', roles: [:db], primary: true
       count = 0
       env.servers.each do |server|
-        count = count + 1
+        count += 1
         expect(server.properties.roles).to match_array [:db]
         expect(server.properties.primary).to eq true
       end
@@ -52,7 +53,7 @@ describe '#autoscale' do
     end
 
     it 'yields to find properties if a block is given' do
-      autoscale 'test-asg', roles: [:web] do |server, i|
+      autoscale 'test-asg', roles: [:web] do |_server, i|
         { roles: [:web, :db], primary: true } if i == 0
       end
 

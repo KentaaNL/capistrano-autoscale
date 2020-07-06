@@ -1,14 +1,12 @@
 language: ruby
-cache: bundler
-rvm:
-- 2.3.0
 sudo: false
-deploy:
-  provider: rubygems
-  gem:
-    master: elbas
-  on:
-    repo: lserman/capistrano-elbas
-    branch: master
-  api_key:
-    secure: gRiZBVBq+/AtMoOeSsMlnCLawQVzN/SVXyOC7+5gni8iKPGDpXL+CBrUv410WStBmA2c4SYn9lNmeLOea31TOA0yIMnjfjA36jPNKzKWThRb9NuUzV8ySGqBcqp1YhvZta46Jv+d3HovGgSJ0aw5tCSfB+gPdwNvkFvqe+zIy3Y=
+cache: bundler
+before_install:
+  - gem update --system
+  - gem install bundler -v '< 2'
+rvm:
+  - 2.3.9
+  - 2.4.10
+  - 2.5.8
+  - 2.6.6
+  - 2.7.1

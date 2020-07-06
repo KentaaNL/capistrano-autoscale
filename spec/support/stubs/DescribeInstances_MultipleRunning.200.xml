@@ -144,7 +144,7 @@
             </monitoring>
             <subnetId>subnet-1a2b3c4d</subnetId>
             <vpcId>vpc-1a2b3c4d</vpcId>
-            <privateIpAddress>10.0.0.12</privateIpAddress>
+            <privateIpAddress>10.0.0.13</privateIpAddress>
             <ipAddress>46.51.219.63</ipAddress>
             <sourceDestCheck>true</sourceDestCheck>
             <groupSet>

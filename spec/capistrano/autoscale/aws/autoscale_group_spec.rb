@@ -1,5 +1,7 @@
-describe Elbas::AWS::AutoscaleGroup do
-  subject { Elbas::AWS::AutoscaleGroup.new 'test-asg' }
+# frozen_string_literal: true
+
+describe Capistrano::Autoscale::AWS::AutoscaleGroup do
+  subject { Capistrano::Autoscale::AWS::AutoscaleGroup.new 'test-asg' }
 
   before do
     webmock :post, %r{autoscaling.(.*).amazonaws.com\/\z} => 'DescribeAutoScalingGroups.200.xml',
@@ -22,7 +24,7 @@ describe Elbas::AWS::AutoscaleGroup do
 
   describe '#instance_ids' do
     it 'returns every instance ID in the ASG' do
-      expect(subject.instance_ids).to eq ['i-1234567890', 'i-500']
+      expect(subject.instance_ids).to eq %w[i-1234567890 i-500]
     end
   end
 
@@ -35,7 +37,7 @@ describe Elbas::AWS::AutoscaleGroup do
 
   describe '#launch_template' do
     it 'throws an error if there is no launch template' do
-      expect { subject.launch_template }.to raise_error(Elbas::Errors::NoLaunchTemplate)
+      expect { subject.launch_template }.to raise_error(Capistrano::Autoscale::Errors::NoLaunchTemplate)
     end
 
     it 'returns a LaunchTemplate object with the id/name/version set' do
@@ -52,7 +54,8 @@ describe Elbas::AWS::AutoscaleGroup do
       allow(subject.aws_counterpart).to receive(:launch_template) { nil }
       allow(subject.aws_counterpart).to receive_message_chain(
         :mixed_instances_policy, :launch_template,
-        :launch_template_specification) do
+        :launch_template_specification
+      ) do
         double(launch_template_id: 'test-2',
                launch_template_name: 'mixed_instance',
                version: '$Latest')
@@ -62,6 +65,5 @@ describe Elbas::AWS::AutoscaleGroup do
       expect(subject.launch_template.name).to eq 'mixed_instance'
       expect(subject.launch_template.version).to eq '$Latest'
     end
-
   end
 end

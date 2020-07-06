@@ -1,5 +1,7 @@
-describe Elbas::AWS::AMI do
-  subject { Elbas::AWS::AMI.new 'test' }
+# frozen_string_literal: true
+
+describe Capistrano::Autoscale::AWS::AMI do
+  subject { Capistrano::Autoscale::AWS::AMI.new 'test' }
 
   describe '#initialize' do
     it 'sets the id' do
@@ -13,14 +15,14 @@ describe Elbas::AWS::AMI do
 
     context 'with snapshots' do
       subject do
-        Elbas::AWS::AMI.new 'test', [
+        Capistrano::Autoscale::AWS::AMI.new 'test', [
           double(:bdm, ebs: double(:ebs, snapshot_id: 'snap-1'))
         ]
       end
 
       it 'sets snapshots to Snapshot objects' do
         expect(subject.snapshots.size).to eq 1
-        expect(subject.snapshots[0]).to be_a_kind_of Elbas::AWS::Snapshot
+        expect(subject.snapshots[0]).to be_a_kind_of Capistrano::Autoscale::AWS::Snapshot
       end
 
       it 'sets the ID on the Snapshots' do
@@ -30,9 +32,9 @@ describe Elbas::AWS::AMI do
   end
 
   describe '#deploy_id' do
-    it 'returns the ELBAS-Deploy-id tag, if set' do
+    it 'returns the Autoscale-Deploy-id tag, if set' do
       webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
-      subject.tag 'ELBAS-Deploy-id', 'test'
+      subject.tag 'Autoscale-Deploy-id', 'test'
       expect(subject.deploy_id).to eq 'test'
     end
 
@@ -42,9 +44,9 @@ describe Elbas::AWS::AMI do
   end
 
   describe '#deploy_group' do
-    it 'returns the ELBAS-Deploy-group tag, if set' do
+    it 'returns the Autoscale-Deploy-group tag, if set' do
       webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
-      subject.tag 'ELBAS-Deploy-group', 'test'
+      subject.tag 'Autoscale-Deploy-group', 'test'
       expect(subject.deploy_group).to eq 'test'
     end
 
@@ -56,8 +58,8 @@ describe Elbas::AWS::AMI do
   describe '#ancestors' do
     before do
       webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
-      subject.tag 'ELBAS-Deploy-group', 'test'
-      subject.tag 'ELBAS-Deploy-id', 'test'
+      subject.tag 'Autoscale-Deploy-group', 'test'
+      subject.tag 'Autoscale-Deploy-id', 'test'
 
       webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'DescribeImages.200.xml',
         with: Hash[body: /Action=DescribeImages/]
@@ -65,7 +67,7 @@ describe Elbas::AWS::AMI do
 
     it 'includes AMIs from the same deploy group, different deploy ID' do
       expect {
-        subject.tag 'ELBAS-Deploy-id', 'not-test'
+        subject.tag 'Autoscale-Deploy-id', 'not-test'
       }.to change {
         subject.ancestors.size
       }.by 1
@@ -86,7 +88,7 @@ describe Elbas::AWS::AMI do
 
     context 'with snapshots' do
       subject do
-        Elbas::AWS::AMI.new 'test', [
+        Capistrano::Autoscale::AWS::AMI.new 'test', [
           double(:bdm, ebs: double(:ebs, snapshot_id: 'snap-1'))
         ]
       end
@@ -104,18 +106,24 @@ describe Elbas::AWS::AMI do
 
   describe '.create' do
     subject { described_class }
-    let(:instance) { Elbas::AWS::Instance.new 'i-1234567890', nil, nil }
+    let(:instance) { Capistrano::Autoscale::AWS::Instance.new 'i-1234567890', nil, nil }
 
     before do
       webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'CreateImage.200.xml',
         with: Hash[body: /Action=CreateImage/]
+
+      webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'DescribeImages.200.xml',
+        with: Hash[body: /Action=DescribeImages/]
+
+      webmock :post, %r{amazonaws.com\/\z} => 'CreateTags.200.xml',
+        with: Hash[body: /Action=CreateTags/]
     end
 
     it 'calls the API with the instance given' do
       subject.create instance
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with body: /Action=CreateImage&InstanceId=i-1234567890&Name=ELBAS-ami-(\d+)/
+        .with body: /Action=CreateImage&InstanceId=i-1234567890&Name=autoscale-(\d+)/
     end
 
     it 'uses the no_reboot option by default' do

@@ -1,5 +1,7 @@
-describe Elbas::AWS::Instance do
-  subject { Elbas::AWS::Instance.new 'i-1234567890', 'ec2-1234567890.amazonaws.com', 16 }
+# frozen_string_literal: true
+
+describe Capistrano::Autoscale::AWS::Instance do
+  subject { Capistrano::Autoscale::AWS::Instance.new 'i-1234567890', '10.0.0.1', 16 }
 
   describe '#initialize' do
     it 'sets the AWS counterpart' do
@@ -8,9 +10,9 @@ describe Elbas::AWS::Instance do
     end
   end
 
-  describe '#hostname' do
-    it 'returns the public DNS' do
-      expect(subject.hostname).to eq 'ec2-1234567890.amazonaws.com'
+  describe '#private_ip' do
+    it 'returns the private IP address' do
+      expect(subject.private_ip).to eq '10.0.0.1'
     end
   end
 

@@ -30,7 +30,7 @@
       <virtualizationType>paravirtual</virtualizationType>
       <tagSet>
         <item>
-          <key>ELBAS-Deploy-id</key>
+          <key>Autoscale-Deploy-id</key>
           <value>test</value>
         </item>
       </tagSet>
