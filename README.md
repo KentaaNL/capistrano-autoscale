@@ -1,20 +1,22 @@
 # Capistrano Autoscale
 
-[![Gem Version](https://badge.fury.io/rb/capistrano-autoscale.svg)](https://badge.fury.io/rb/capistrano-autoscale)
+This is a fork of [lserman/capistrano-elbas](https://github.com/lserman/capistrano-elbas), with several improvements.
 
 Capistrano-autoscale was written to ease the deployment of Rails applications to AWS Auto Scaling
 Groups. During your Capistrano deployment, capistrano-autoscale will:
 
-- Deploy your code to each running instance connected to a given Auto Scaling Group
-- After deployment, create an AMI from one of the running instances
-- Update the Auto Scaling Group's launch template with the AMI ID
-- Delete any outdated AMIs created by previous deployments
+- Suspend Launch & Terminate processes on the Auto Scaling Group.
+- Deploy your code to each running instance connected to a given Auto Scaling Group.
+- After deployment, create an AMI from one of the running instances.
+- Update the Auto Scaling Group's launch template with the AMI ID.
+- Delete any outdated AMIs created by previous deployments.
+- Resume Launch & Terminate processes on the Auto Scaling Group.
 
 ## Installation
 
-Add to Gemfile, then `bundle`:
+Add to Gemfile, then run `bundle`:
 
-`gem 'capistrano-autoscale'`
+`gem 'capistrano-autoscale', require: false, git: 'https://github.com/KentaaNL/capistrano-autoscale.git'`
 
 Add to Capfile:
 
@@ -30,10 +32,18 @@ set :aws_secret_access_key, ENV['AWS_SECRET_ACCESS_KEY']
 set :aws_region,            ENV['AWS_REGION']
 ```
 
+You can configure the prefixes that AMI names will get and add custom tags to AMIs and snapshots using the following options:
+
+```ruby
+set :aws_autoscale_ami_prefix, "my-ami"
+set :aws_autoscale_ami_tags, { "Environment" => "Sandbox" }
+set :aws_autoscale_snapshot_tags, { "Environment" => "Sandbox" }
+```
+
 ## Usage
 
 Instead of using Capistrano's `server` method, use `autoscale` instead in
-`deploy/<environment>.rb` (replace <environment> with your environment). Provide
+`deploy/<environment>.rb` (replace &lt;environment&gt; with your environment). Provide
 the name of your AutoScale group instead of a hostname:
 
 ```ruby
@@ -42,12 +52,10 @@ autoscale 'my-autoscale-group', user: 'apps', roles: [:app, :web, :db]
 
 Run `cap production deploy`.
 
-**As of version 3, your AWS setup must use launch templates as opposed to launch
-configurations.** This allows capistrano-autoscale to simply create a new launch template version
-with the new AMI ID after a deployment. It no longer needs to update your
-AutoScale group or mess around with network settings, instance sizes, etc., as
-that information is all contained within the launch template. Failure to use a
-launch template will result in a `Capistrano::Autoscale::Errors::NoLaunchTemplate` error.
+Note: Your Auto Scaling Group must use Launch Templates as opposed to Launch
+Configurations. This allows capistrano-autoscale to simply create a new Launch Template version
+with the new AMI ID after a deployment. Failure to use a
+Launch Template will result in a `Capistrano::Autoscale::Errors::NoLaunchTemplate` error.
 
 ### Customizing Server Properties
 
