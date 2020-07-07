@@ -40,7 +40,9 @@ namespace :autoscale do
   end
 
   task :update_auto_scaling_group do
-    name = fetch(:aws_autoscale_group_name, ENV.fetch('autoscale_group_name'))
+    name = fetch(:aws_autoscale_group_name, ENV['autoscale_group_name'])
+    raise ArgumentError, 'No autoscale group name' if name.nil?
+
     set :aws_autoscale_group_name, name
 
     info "Auto Scaling Group: #{name}"
@@ -52,9 +54,10 @@ namespace :autoscale do
 
   task :create_ami do
     asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
+    prefix = asg.ami_prefix || fetch(:aws_autoscale_ami_prefix)
 
     info 'Creating AMI from a running instance...'
-    ami = Capistrano::Autoscale::AWS::AMI.create(asg.instances.running.sample, prefix: fetch(:aws_autoscale_ami_prefix))
+    ami = Capistrano::Autoscale::AWS::AMI.create(asg.instances.running.sample, prefix: prefix)
     ami.create_tags(asg.name)
 
     set :aws_autoscale_ami, ami

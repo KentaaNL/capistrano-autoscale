@@ -6,6 +6,8 @@ module Capistrano
       class AutoscaleGroup < Base
         SUSPEND_PROCESSES = %w[Launch Terminate].freeze
 
+        AMI_PREFIX_TAG = 'Autoscale-Ami-Prefix'
+
         attr_reader :name, :aws_counterpart
 
         def initialize(name)
@@ -48,6 +50,14 @@ module Capistrano
             auto_scaling_group_name: name,
             scaling_processes: SUSPEND_PROCESSES
           )
+        end
+
+        def tags
+          aws_counterpart.tags.map { |tag| [tag.key, tag.value] }.to_h
+        end
+
+        def ami_prefix
+          tags[AMI_PREFIX_TAG]
         end
 
         private
