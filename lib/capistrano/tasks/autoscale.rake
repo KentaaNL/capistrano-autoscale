@@ -24,7 +24,7 @@ namespace :autoscale do
     asg.resume
   end
 
-  task :deploy do
+  task :update do
     invoke 'autoscale:create_ami'
     invoke 'autoscale:update_launch_template'
     invoke 'autoscale:cleanup'
