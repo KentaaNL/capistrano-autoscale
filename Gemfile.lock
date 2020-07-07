@@ -4,7 +4,7 @@ PATH
     capistrano-autoscale (1.0.0)
       aws-sdk-autoscaling (~> 1)
       aws-sdk-ec2 (~> 1)
-      capistrano (~> 3, > 3)
+      capistrano (~> 3.9, > 3.9)
 
 GEM
   remote: https://rubygems.org/

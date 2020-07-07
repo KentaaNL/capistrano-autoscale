@@ -29,5 +29,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'aws-sdk-autoscaling', '~> 1'
   spec.add_dependency 'aws-sdk-ec2', '~> 1'
-  spec.add_dependency 'capistrano', '~> 3', '> 3'
+  spec.add_dependency 'capistrano', '~> 3.9', '> 3.9'
 end
