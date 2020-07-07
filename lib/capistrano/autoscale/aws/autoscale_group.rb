@@ -11,6 +11,8 @@ module Capistrano
         def initialize(name)
           @name = name
           @aws_counterpart = query_autoscale_group_by_name(name)
+
+          raise Capistrano::Autoscale::Errors::NoAutoScalingGroup, name unless @aws_counterpart
         end
 
         def instance_ids
@@ -28,7 +30,9 @@ module Capistrano
           LaunchTemplate.new(
             lts.launch_template_id,
             lts.launch_template_name,
-            lts.version
+            lts.version,
+            false,
+            nil
           )
         end
 

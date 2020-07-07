@@ -11,6 +11,8 @@ module Capistrano
         asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new groupname
         instances = asg.instances.running
 
+        info "Auto Scaling Group: #{groupname}"
+
         instances.each.with_index do |instance, i|
           info "Adding server #{instance.private_ip}"
 
@@ -32,7 +34,7 @@ module Capistrano
           end
         else
           error <<~MESSAGE
-            Could not create AMI because no running instances were found in the specified AutoScale group. Ensure that the AutoScale group name is correct and that there is at least one running instance attached to it.
+            Will not create AMI because no running instances were found in the specified Auto Scaling group. Ensure that the Auto Scaling group name is correct and that there is at least one running instance attached to it.
           MESSAGE
         end
       end

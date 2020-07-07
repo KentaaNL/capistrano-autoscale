@@ -10,8 +10,8 @@ Groups. During your Capistrano deployment, capistrano-autoscale will:
 - Suspend Launch & Terminate processes on the Auto Scaling Group.
 - Deploy your code to each running instance connected to a given Auto Scaling Group.
 - After deployment, create an AMI from one of the running instances.
-- Update the Auto Scaling Group's launch template with the AMI ID.
-- Delete any outdated AMIs created by previous deployments.
+- Create a new Launch Template version with the AMI ID based on the current Auto Scaling Group's Launch Template.
+- Delete any outdated Launch Template versions, AMIs and snapshots created by previous deployments.
 - Resume Launch & Terminate processes on the Auto Scaling Group.
 
 ## Installation
@@ -34,19 +34,37 @@ set :aws_secret_access_key, ENV['AWS_SECRET_ACCESS_KEY']
 set :aws_region,            ENV['AWS_REGION']
 ```
 
-You can configure the prefixes that AMI names will get and add custom tags to AMIs and snapshots using the following options:
+To configure the prefix that AMIs will get (defaults to stage name):
 
 ```ruby
 set :aws_autoscale_ami_prefix, "my-ami"
+```
+
+To add custom tags to AMIs and snapshots you can specify a hash:
+
+```ruby
 set :aws_autoscale_ami_tags, { "Environment" => "Sandbox" }
 set :aws_autoscale_snapshot_tags, { "Environment" => "Sandbox" }
+```
+
+By default, the Launch & Terminate processes will be suspended during deployment. To disable this:
+
+```ruby
+set :aws_autoscale_suspend_processes, false
+```
+
+After deployment, any outdated Launch Template versions, AMIs and snapshots will be deleted. By default, the number of `keep_releases` will be kept. To change this, set:
+
+```ruby
+set :aws_autoscale_cleanup_old_versions, true
+set :aws_autoscale_keep_versions, 8
 ```
 
 ## Usage
 
 Instead of using Capistrano's `server` method, use `autoscale` instead in
 `deploy/<environment>.rb` (replace &lt;environment&gt; with your environment). Provide
-the name of your AutoScale group instead of a hostname:
+the name of your Auto Scaling group instead of a hostname:
 
 ```ruby
 autoscale 'my-autoscale-group', user: 'apps', roles: [:app, :web, :db]

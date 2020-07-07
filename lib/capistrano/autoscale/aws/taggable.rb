@@ -11,7 +11,7 @@ module Capistrano
         end
 
         def tags
-          @tags || {}
+          @tags ||= aws_counterpart.tags.map { |tag| [tag.key, tag.value] }.to_h
         end
       end
     end

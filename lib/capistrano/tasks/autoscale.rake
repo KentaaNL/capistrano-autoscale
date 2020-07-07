@@ -6,6 +6,8 @@ namespace :load do
     set_if_empty :aws_autoscale_ami_tags, {}
     set_if_empty :aws_autoscale_snapshot_tags, {}
     set_if_empty :aws_autoscale_suspend_processes, true
+    set_if_empty :aws_autoscale_cleanup_old_versions, true
+    set_if_empty :aws_autoscale_keep_versions, fetch(:keep_releases)
   end
 end
 
@@ -23,29 +25,51 @@ namespace :autoscale do
   end
 
   task :deploy do
+    invoke 'autoscale:create_ami'
+    invoke 'autoscale:update_launch_template'
+    invoke 'autoscale:cleanup'
+  end
+
+  task :create_ami do
     asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
 
     info 'Creating AMI from a running instance...'
     ami = Capistrano::Autoscale::AWS::AMI.create(asg.instances.running.sample, prefix: fetch(:aws_autoscale_ami_prefix))
-    ami.deploy_group = asg.name
-    ami.deploy_id = env.timestamp.to_i.to_s
+    ami.create_tags(asg.name)
 
-    fetch(:aws_autoscale_ami_tags).each { |key, value| ami.tag(key, value) }
-
-    ami.snapshots.each do |snapshot|
-      fetch(:aws_autoscale_snapshot_tags).each { |key, value| snapshot.tag(key, value) }
-    end
+    set :aws_autoscale_ami, ami
 
     info "Created AMI: #{ami.id}"
+  end
+
+  task update_launch_template: [:create_ami] do
+    asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
+    ami = fetch(:aws_autoscale_ami)
 
     info 'Updating Launch Template with the new AMI...'
     launch_template = asg.launch_template.update(ami, description: revision_log_message)
-    info "Updated Launch Template, latest version = #{launch_template.version}"
 
-    info 'Cleaning up old AMIs...'
-    ami.ancestors.each do |ancestor|
-      info "Deleting old AMI: #{ancestor.id}"
-      ancestor.delete
+    set :aws_autoscale_launch_template, launch_template
+
+    info "Updated Launch Template, latest version = #{launch_template.version}"
+  end
+
+  task cleanup: [:create_ami, :update_launch_template] do
+    next unless fetch(:aws_autoscale_cleanup_old_versions)
+
+    launch_template = fetch(:aws_autoscale_launch_template)
+
+    info 'Cleaning up old Launch Template versions and AMIs...'
+    launch_template.previous_versions.drop(fetch(:aws_autoscale_keep_versions)).each do |version|
+      next if version.default || version.ami.nil?
+      # Only delete templates & AMIs that were tagged by us.
+      next if version.ami.deploy_group != fetch(:aws_autoscale_group_name)
+
+      info "Deleting old Launch Template version: #{version.version}"
+      if version.delete
+        info "Deleting old AMI: #{version.ami.id}"
+        version.ami.delete
+      end
     end
   end
 end

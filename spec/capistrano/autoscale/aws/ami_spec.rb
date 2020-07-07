@@ -31,18 +31,6 @@ describe Capistrano::Autoscale::AWS::AMI do
     end
   end
 
-  describe '#deploy_id' do
-    it 'returns the Autoscale-Deploy-id tag, if set' do
-      webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
-      subject.tag 'Autoscale-Deploy-id', 'test'
-      expect(subject.deploy_id).to eq 'test'
-    end
-
-    it 'returns nil if the tag was never set' do
-      expect(subject.deploy_id).to be_nil
-    end
-  end
-
   describe '#deploy_group' do
     it 'returns the Autoscale-Deploy-group tag, if set' do
       webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
@@ -51,26 +39,9 @@ describe Capistrano::Autoscale::AWS::AMI do
     end
 
     it 'returns nil if the tag was never set' do
-      expect(subject.deploy_group).to be_nil
-    end
-  end
-
-  describe '#ancestors' do
-    before do
-      webmock :post, /ec2/ => 201, with: Hash[body: /Action=CreateTags/]
-      subject.tag 'Autoscale-Deploy-group', 'test'
-      subject.tag 'Autoscale-Deploy-id', 'test'
-
       webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'DescribeImages.200.xml',
         with: Hash[body: /Action=DescribeImages/]
-    end
-
-    it 'includes AMIs from the same deploy group, different deploy ID' do
-      expect {
-        subject.tag 'Autoscale-Deploy-id', 'not-test'
-      }.to change {
-        subject.ancestors.size
-      }.by 1
+      expect(subject.deploy_group).to be_nil
     end
   end
 

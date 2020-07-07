@@ -9,6 +9,7 @@ require 'capistrano/autoscale/logger'
 require 'capistrano/autoscale/dsl'
 
 require 'capistrano/autoscale/errors/create_image_failed'
+require 'capistrano/autoscale/errors/no_auto_scaling_group'
 require 'capistrano/autoscale/errors/no_launch_template'
 
 require 'capistrano/autoscale/aws/base'

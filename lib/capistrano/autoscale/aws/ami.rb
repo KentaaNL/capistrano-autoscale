@@ -6,7 +6,6 @@ module Capistrano
       class AMI < Base
         include Taggable
 
-        DEPLOY_ID_TAG = 'Autoscale-Deploy-id'
         DEPLOY_GROUP_TAG = 'Autoscale-Deploy-group'
 
         attr_reader :aws_counterpart, :id, :snapshots
@@ -20,26 +19,8 @@ module Capistrano
           end
         end
 
-        def deploy_id
-          tags[DEPLOY_ID_TAG]
-        end
-
-        def deploy_id=(value)
-          tag(DEPLOY_ID_TAG, value)
-        end
-
         def deploy_group
           tags[DEPLOY_GROUP_TAG]
-        end
-
-        def deploy_group=(value)
-          tag(DEPLOY_GROUP_TAG, value)
-        end
-
-        def ancestors
-          aws_amis_in_deploy_group
-            .reject { |aws_ami| deploy_id_from_aws_tags(aws_ami.tags) == deploy_id }
-            .map { |aws_ami| self.class.new aws_ami.image_id, aws_ami.block_device_mappings }
         end
 
         def delete
@@ -62,7 +43,7 @@ module Capistrano
           loop do
             block_device_mappings = image.block_device_mappings
             snapshot_ids = block_device_mappings.map { |mapping| mapping.ebs&.snapshot_id }.compact
-            break unless snapshot_ids.empty?
+            break if !snapshot_ids.empty? || image.state == 'failed'
 
             sleep 1
             image.load
@@ -76,20 +57,12 @@ module Capistrano
           ami
         end
 
-        private
+        def create_tags(deploy_group)
+          tag(DEPLOY_GROUP_TAG, deploy_group)
 
-        def aws_amis_in_deploy_group
-          ec2_client.describe_images(
-            owners: ['self'],
-            filters: [{
-              name: "tag:#{DEPLOY_GROUP_TAG}",
-              values: [deploy_group]
-            }]
-          ).images
-        end
+          aws_autoscale_ami_tags.each { |key, value| tag(key, value) }
 
-        def deploy_id_from_aws_tags(tags)
-          tags.detect { |tag| tag.key == DEPLOY_ID_TAG }&.value
+          snapshots.each(&:create_tags)
         end
       end
     end

@@ -32,6 +32,14 @@ module Capistrano
         def aws_region
           fetch :aws_region
         end
+
+        def aws_autoscale_ami_tags
+          fetch :aws_autoscale_ami_tags
+        end
+
+        def aws_autoscale_snapshot_tags
+          fetch :aws_autoscale_snapshot_tags
+        end
       end
     end
   end
