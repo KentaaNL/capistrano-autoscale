@@ -70,28 +70,15 @@ the name of your Auto Scaling group instead of a hostname:
 autoscale 'my-autoscale-group', user: 'apps', roles: [:app, :web, :db]
 ```
 
-Run `cap production deploy`.
-
-Note: Your Auto Scaling Group must use Launch Templates as opposed to Launch
-Configurations. This allows capistrano-autoscale to simply create a new Launch Template version
-with the new AMI ID after a deployment. Failure to use a
-Launch Template will result in a `Capistrano::Autoscale::Errors::NoLaunchTemplate` error.
-
-### Customizing Server Properties
-
-You can pass a block to `autoscale` and return properties for any specific server.
-The block accepts the server and the server's index as arguments.
-
-For example, if you want to apply the `:db` role to only the first server:
+If you have multiple autoscaling groups to deploy to, specify each of them:
 
 ```ruby
-autoscale 'my-autoscale-group', roles: [:app, :web] do |server, i|
-  { roles: [:app, :web, :db] } if i == 0
-end
+autoscale 'app-autoscale-group', user: 'apps', roles: [:app, :web]
+autoscale 'worker-autoscale-group', user: 'apps', roles: [:worker]
 ```
 
-Returning `nil` from this block will cause the server to use the properties
-passed to `autoscale`.
+Run `cap production deploy`.
 
-Returning anything but `nil` will override the entire properties hash (as
-opposed to merging the two hashes together).
+Note: Your Auto Scaling Group must use Launch Templates as opposed to Launch Configurations.
+This allows capistrano-autoscale to simply create a new Launch Template version with the new AMI ID after a deployment.
+Failure to use a Launch Template will result in a `Capistrano::Autoscale::Errors::NoLaunchTemplate` error.

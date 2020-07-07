@@ -14,7 +14,7 @@ Metrics/BlockLength:
   Enabled: false
 
 Metrics/MethodLength:
-  Max: 23
+  Max: 27
 
 Style/BlockDelimiters:
   Exclude:

@@ -5,6 +5,7 @@ describe '#autoscale' do
     Capistrano::Configuration.reset!
     Rake::Task.define_task('deploy') {}
     Rake::Task.define_task('deploy:failed') {}
+    invoke! 'load:defaults'
 
     webmock :post, %r{autoscaling.(.*).amazonaws.com\/\z} => 'DescribeAutoScalingGroups.200.xml',
       with: Hash[body: /Action=DescribeAutoScalingGroups/]
@@ -38,7 +39,7 @@ describe '#autoscale' do
     it 'adds multiple server hostnames' do
       autoscale 'test-asg'
       expect(env.servers.count).to eq 2
-      expect(env.servers.map(&:hostname)).to match_array ['10.0.0.12', '10.0.0.13']
+      expect(env.servers.map(&:hostname)).to match_array ['10.0.0.13', '10.0.0.14']
     end
 
     it 'passes along the properties' do
@@ -52,16 +53,26 @@ describe '#autoscale' do
       expect(count).to eq 2
     end
 
-    it 'yields to find properties if a block is given' do
-      autoscale 'test-asg', roles: [:web] do |_server, i|
-        { roles: [:web, :db], primary: true } if i == 0
-      end
+    it 'passes primary roles to the first server' do
+      autoscale 'test-asg', roles: [:web], primary_roles: [:web, :db]
 
       expect(env.servers.to_a[0].properties.roles).to match_array [:web, :db]
-      expect(env.servers.to_a[0].properties.primary).to eq true
-
       expect(env.servers.to_a[1].properties.roles).to match_array [:web]
-      expect(env.servers.to_a[1].properties.keys).to_not include :primary
+    end
+  end
+
+  context 'multiple autoscaling groups' do
+    before do
+      webmock :post, %r{ec2.(.*).amazonaws.com\/\z} => 'DescribeInstances_MultipleRunning.200.xml',
+        with: Hash[body: /Action=DescribeInstances/]
+    end
+
+    it 'adds multiple server hostnames' do
+      autoscale 'test-asg'
+      autoscale 'test-asg2'
+
+      expect(env.servers.count).to eq 2
+      expect(env.servers.map(&:hostname)).to match_array ['10.0.0.13', '10.0.0.14']
     end
   end
 

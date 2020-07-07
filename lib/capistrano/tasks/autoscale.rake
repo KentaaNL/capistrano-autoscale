@@ -2,6 +2,7 @@
 
 namespace :load do
   task :defaults do
+    set_if_empty :aws_autoscale_group_names, []
     set_if_empty :aws_autoscale_ami_prefix, fetch(:stage)
     set_if_empty :aws_autoscale_ami_tags, {}
     set_if_empty :aws_autoscale_snapshot_tags, {}
@@ -13,21 +14,33 @@ end
 
 namespace :autoscale do
   task :suspend do
-    asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
     info 'Suspending Auto Scaling processes...'
-    asg.suspend
+
+    fetch(:aws_autoscale_group_names).each do |name|
+      asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(name)
+      asg.suspend
+    end
   end
 
   task :resume do
-    asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
     info 'Resuming Auto Scaling processes...'
-    asg.resume
+
+    fetch(:aws_autoscale_group_names).each do |name|
+      asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(name)
+      asg.resume
+    end
   end
 
   task :update do
-    invoke 'autoscale:create_ami'
-    invoke 'autoscale:update_launch_template'
-    invoke 'autoscale:cleanup'
+    fetch(:aws_autoscale_group_names).each do |name|
+      set :aws_autoscale_group_name, name
+
+      info "Auto Scaling Group: #{name}"
+
+      invoke! 'autoscale:create_ami'
+      invoke! 'autoscale:update_launch_template'
+      invoke! 'autoscale:cleanup'
+    end
   end
 
   task :create_ami do

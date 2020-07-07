@@ -6,21 +6,25 @@ module Capistrano
       include Capistrano::Autoscale::Logger
 
       def autoscale(groupname, properties = {})
-        set :aws_autoscale_group_name, groupname
+        group_names = fetch(:aws_autoscale_group_names)
+        group_names << groupname
 
         asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new groupname
         instances = asg.instances.running
 
         info "Auto Scaling Group: #{groupname}"
 
-        instances.each.with_index do |instance, i|
+        instances.each.with_index do |instance, index|
           info "Adding server #{instance.private_ip}"
 
-          props = nil
-          props = yield(instance, i) if block_given?
-          props ||= properties
+          if index.zero? && properties.key?(:primary_roles)
+            server_properties = properties.dup
+            server_properties[:roles] = server_properties.delete(:primary_roles)
+          else
+            server_properties = properties
+          end
 
-          server instance.private_ip, props
+          server(instance.private_ip, server_properties)
         end
 
         if instances.any?
