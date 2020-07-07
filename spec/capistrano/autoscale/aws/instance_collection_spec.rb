@@ -36,4 +36,20 @@ describe Capistrano::Autoscale::AWS::InstanceCollection do
       end
     end
   end
+
+  context 'with empty collection' do
+    subject { Capistrano::Autoscale::AWS::InstanceCollection.new %w[] }
+
+    describe '#instances' do
+      it 'returns an empty array' do
+        expect(subject.instances.size).to eq 0
+      end
+    end
+
+    describe '#running' do
+      it 'returns an empty array' do
+        expect(subject.running.size).to eq 0
+      end
+    end
+  end
 end
