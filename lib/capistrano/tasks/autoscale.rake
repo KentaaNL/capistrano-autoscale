@@ -35,12 +35,19 @@ namespace :autoscale do
     fetch(:aws_autoscale_group_names).each do |name|
       set :aws_autoscale_group_name, name
 
-      info "Auto Scaling Group: #{name}"
-
-      invoke! 'autoscale:create_ami'
-      invoke! 'autoscale:update_launch_template'
-      invoke! 'autoscale:cleanup'
+      invoke! 'autoscale:update_auto_scaling_group'
     end
+  end
+
+  task :update_auto_scaling_group do
+    name = fetch(:aws_autoscale_group_name, ENV.fetch('autoscale_group_name'))
+    set :aws_autoscale_group_name, name
+
+    info "Auto Scaling Group: #{name}"
+
+    invoke! 'autoscale:create_ami', name: name
+    invoke! 'autoscale:update_launch_template', name
+    invoke! 'autoscale:cleanup', name
   end
 
   task :create_ami do
