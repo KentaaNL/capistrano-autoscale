@@ -40,8 +40,8 @@ module Capistrano
 
         def ami
           @ami ||= begin
-            image = ec2_client.describe_images(image_ids: [image_id]).images.first
-            AMI.new image.image_id, image.block_device_mappings if image
+            image = ::Aws::EC2::Image.new(image_id, client: ec2_client)
+            AMI.new(image.image_id, image.block_device_mappings) if image.exists?
           end
         end
 

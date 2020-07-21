@@ -71,7 +71,7 @@ describe Capistrano::Autoscale::AWS::LaunchTemplate do
         with: Hash[body: /Action=DescribeImages/]
 
       ami = subject.ami
-      expect(ami.id).to eq 'ami-1234567890'
+      expect(ami.id).to eq 'ami-aabbccdd'
     end
   end
 
