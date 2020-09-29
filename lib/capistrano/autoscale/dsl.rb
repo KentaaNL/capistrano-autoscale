@@ -27,6 +27,7 @@ module Capistrano
           server(instance.private_ip, server_properties)
         end
 
+        instances = asg.instances_in_service.running
         if instances.any?
           after 'deploy', 'autoscale:update'
 
@@ -38,7 +39,7 @@ module Capistrano
           end
         else
           error <<~MESSAGE
-            Will not create AMI because no running instances were found in the specified Auto Scaling group. Ensure that the Auto Scaling group name is correct and that there is at least one running instance attached to it.
+            Will not create AMI because no instances with state in service were found in the specified Auto Scaling group. Ensure that the Auto Scaling group name is correct and that there is at least one in service instance attached to it.
           MESSAGE
         end
       end

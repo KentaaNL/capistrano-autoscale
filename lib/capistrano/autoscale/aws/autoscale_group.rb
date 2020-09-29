@@ -6,23 +6,28 @@ module Capistrano
       class AutoscaleGroup < Base
         SUSPEND_PROCESSES = %w[Launch Terminate].freeze
 
+        LIFECYCLE_STATE_IN_SERVICE = 'InService'
+        LIFECYCLE_STATE_STANDBY = 'Standby'
+
         AMI_PREFIX_TAG = 'Autoscale-Ami-Prefix'
 
         attr_reader :name, :aws_counterpart
 
         def initialize(name)
           @name = name
-          @aws_counterpart = query_autoscale_group_by_name(name)
+          @aws_counterpart = Aws::AutoScaling::AutoScalingGroup.new name: name, client: autoscaling_client
 
-          raise Capistrano::Autoscale::Errors::NoAutoScalingGroup, name unless @aws_counterpart
-        end
-
-        def instance_ids
-          aws_counterpart.instances.map(&:instance_id)
+          raise Capistrano::Autoscale::Errors::NoAutoScalingGroup, name unless @aws_counterpart.exists?
         end
 
         def instances
-          InstanceCollection.new instance_ids
+          instance_ids = aws_counterpart.instances.map(&:instance_id)
+          InstanceCollection.new(instance_ids)
+        end
+
+        def instances_in_service
+          instance_ids = aws_counterpart.instances.select { |i| i.lifecycle_state == LIFECYCLE_STATE_IN_SERVICE }.map(&:instance_id)
+          InstanceCollection.new(instance_ids)
         end
 
         def launch_template
@@ -39,17 +44,15 @@ module Capistrano
         end
 
         def suspend
-          autoscaling_client.suspend_processes(
-            auto_scaling_group_name: name,
-            scaling_processes: SUSPEND_PROCESSES
-          )
+          aws_counterpart.suspend_processes(scaling_processes: SUSPEND_PROCESSES)
         end
 
         def resume
-          autoscaling_client.resume_processes(
-            auto_scaling_group_name: name,
-            scaling_processes: SUSPEND_PROCESSES
-          )
+          aws_counterpart.resume_processes(scaling_processes: SUSPEND_PROCESSES)
+        end
+
+        def suspended?
+          aws_counterpart.suspended_processes.map(&:process_name).any? { |name| SUSPEND_PROCESSES.include?(name) }
         end
 
         def tags
@@ -60,18 +63,24 @@ module Capistrano
           tags[AMI_PREFIX_TAG]
         end
 
+        def enter_standby(instance)
+          instance = aws_counterpart.instances.select { |i| i.id == instance.id }.first
+          instance.enter_standby(should_decrement_desired_capacity: true)
+
+          loop do
+            break if instance.lifecycle_state == LIFECYCLE_STATE_STANDBY
+
+            sleep 1
+            instance.load
+          end
+        end
+
+        def exit_standby(instance)
+          instance = aws_counterpart.instances.select { |i| i.id == instance.id }.first
+          instance.exit_standby
+        end
+
         private
-
-        def autoscaling_client
-          @autoscaling_client ||= ::Aws::AutoScaling::Client.new(aws_options)
-        end
-
-        def query_autoscale_group_by_name(name)
-          autoscaling_client
-            .describe_auto_scaling_groups(auto_scaling_group_names: [name])
-            .auto_scaling_groups
-            .first
-        end
 
         def aws_launch_template
           aws_counterpart.launch_template

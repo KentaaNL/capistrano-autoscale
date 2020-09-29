@@ -3,6 +3,7 @@
 namespace :load do
   task :defaults do
     set_if_empty :aws_autoscale_group_names, []
+    set_if_empty :aws_autoscale_standby_instances, []
     set_if_empty :aws_autoscale_ami_prefix, fetch(:stage)
     set_if_empty :aws_autoscale_ami_tags, {}
     set_if_empty :aws_autoscale_snapshot_tags, {}
@@ -29,6 +30,11 @@ namespace :autoscale do
       asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(name)
       asg.resume
     end
+
+    fetch(:aws_autoscale_standby_instances).each do |asg, instance|
+      info "Instance #{instance.id} exiting standby state..."
+      asg.exit_standby(instance)
+    end
   end
 
   task :update do
@@ -47,27 +53,47 @@ namespace :autoscale do
 
     info "Auto Scaling Group: #{name}"
 
-    invoke! 'autoscale:create_ami', name: name
-    invoke! 'autoscale:update_launch_template', name
-    invoke! 'autoscale:cleanup', name
+    invoke! 'autoscale:create_ami'
+    invoke! 'autoscale:update_launch_template'
+    invoke! 'autoscale:cleanup'
   end
 
   task :create_ami do
     asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
     prefix = asg.ami_prefix || fetch(:aws_autoscale_ami_prefix)
 
-    info 'Creating AMI from a running instance...'
-    ami = Capistrano::Autoscale::AWS::AMI.create(asg.instances.running.sample, prefix: prefix)
-    ami.create_tags(asg.name)
+    info 'Selecting instance to create AMI from...'
+    instance = asg.instances_in_service.running.sample
 
-    set :aws_autoscale_ami, ami
+    if instance
+      info "Instance #{instance.id} entering standby state..."
+      asg.enter_standby(instance)
 
-    info "Created AMI: #{ami.id}"
+      standby_instances = fetch(:aws_autoscale_standby_instances)
+      standby_instances << [asg, instance]
+
+      info "Creating AMI from #{instance.id} "
+
+      ami = Capistrano::Autoscale::AWS::AMI.create(instance, prefix: prefix)
+      ami.create_tags(asg.name)
+
+      set :aws_autoscale_ami, ami
+
+      info "Created AMI: #{ami.id}"
+
+      unless asg.suspended?
+        info "Instance #{instance.id} exiting standby state..."
+        asg.exit_standby(instance)
+      end
+    else
+      error 'Unable to create AMI. No instance with a valid state was found in the Auto Scaling group.'
+    end
   end
 
   task update_launch_template: [:create_ami] do
     asg = Capistrano::Autoscale::AWS::AutoscaleGroup.new(fetch(:aws_autoscale_group_name))
     ami = fetch(:aws_autoscale_ami)
+    next if ami.nil?
 
     info 'Updating Launch Template with the new AMI...'
     launch_template = asg.launch_template.update(ami, description: revision_log_message)
@@ -81,6 +107,7 @@ namespace :autoscale do
     next unless fetch(:aws_autoscale_cleanup_old_versions)
 
     launch_template = fetch(:aws_autoscale_launch_template)
+    next if launch_template.nil?
 
     info 'Cleaning up old Launch Template versions and AMIs...'
     launch_template.previous_versions.drop(fetch(:aws_autoscale_keep_versions)).each do |version|

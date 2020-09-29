@@ -17,20 +17,21 @@ describe Capistrano::Autoscale::AWS::AutoscaleGroup do
     end
 
     it 'has an aws-sdk counterpart' do
-      expect(subject.aws_counterpart).to be_a_kind_of ::Aws::AutoScaling::Types::AutoScalingGroup
+      expect(subject.aws_counterpart).to be_a_kind_of ::Aws::AutoScaling::AutoScalingGroup
       expect(subject.aws_counterpart.auto_scaling_group_name).to eq 'test-asg'
-    end
-  end
-
-  describe '#instance_ids' do
-    it 'returns every instance ID in the ASG' do
-      expect(subject.instance_ids).to eq %w[i-1234567890 i-500]
     end
   end
 
   describe '#instances' do
     it 'returns an instance collection with all instances' do
       instances = subject.instances
+      expect(instances.count).to eq 2
+    end
+  end
+
+  describe '#instances_in_service' do
+    it 'returns an instance collection with instances with state "InService"' do
+      instances = subject.instances_in_service
       expect(instances.count).to eq 2
     end
   end

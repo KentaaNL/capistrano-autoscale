@@ -28,7 +28,7 @@ module Capistrano
           snapshots.each(&:delete)
         end
 
-        def self.create(instance, prefix: 'autoscale', no_reboot: true)
+        def self.create(instance, prefix: 'autoscale', no_reboot: false)
           name = "#{prefix}-#{Time.now.to_i}"
 
           image = instance.aws_counterpart.create_image(

@@ -10,6 +10,10 @@ module Capistrano
           @ec2_client ||= ::Aws::EC2::Client.new(aws_options)
         end
 
+        def autoscaling_client
+          @autoscaling_client ||= ::Aws::AutoScaling::Client.new(aws_options)
+        end
+
         def aws_options
           options = {}
           options[:region] = aws_region if aws_region

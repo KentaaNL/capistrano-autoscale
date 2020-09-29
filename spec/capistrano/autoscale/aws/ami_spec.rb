@@ -97,18 +97,18 @@ describe Capistrano::Autoscale::AWS::AMI do
         .with body: /Action=CreateImage&InstanceId=i-1234567890&Name=autoscale-(\d+)/
     end
 
-    it 'uses the no_reboot option by default' do
+    it 'sets the no_reboot option to false by default' do
       subject.create instance
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with(body: /NoReboot=true/)
+        .with(body: /NoReboot=false/)
     end
 
-    it 'uses no_reboot as false, if given' do
-      subject.create instance, no_reboot: false
+    it 'sets the no_reboot options to true, if given' do
+      subject.create instance, no_reboot: true
       expect(WebMock)
         .to have_requested(:post, /ec2/)
-        .with(body: /NoReboot=false/)
+        .with(body: /NoReboot=true/)
     end
 
     it 'returns the an AMI object with the new id' do
